@@ -1,82 +1,130 @@
 from random import choice as ch
 
+title_banner = """
+.   ,  ,.  ,---. .  .  ,-.  ,     ,.  .   , ,--. ,-.  
+|\ /| /  \   |   |  | (   ` |    /  \  \ /  |    |  ) 
+| V | |--|   |   |--|  `-.  |    |--|   Y   |-   |-<  
+|   | |  |   |   |  | .   ) |    |  |   |   |    |  \ 
+'   ' '  '   '   '  '  `-'  `--' '  '   '   `--' '  '
+"""
+
+help = """
+    To get a high score, answer each question correctly!
+    You can pick between 4 modes, as well as adjust the number
+    of questions and difficulty in Options.
+"""
+
 mode = {1: "+", 2: "-", 3: "x", 4: "/"}
 
 
 def line():
+    """Prints a line for seperating menus"""
     print("-" * 66)
 
 
-def input_int():
+def input_int(min_num: int = -999999, max_num: int = 999999):
+    """Returns the first integer user input between min_num and max_num"""
     while True:
         try:
             num = int(input(">> "))
+            if (num < min_num) or (num > max_num):
+                print("Error! Please enter a valid number.")
+                continue
             return num
         except ValueError:
             print("Error! Please enter a valid number.")
 
 
 class GameManager:
+    """Class for handling menus and parameters of the GameLoop"""
 
-    configs = {"num_q": 10, "num1 diff": (2, 10), "num2 diff": (2, 10)}
+    # default parameters when the program starts
+    parameters = {"num_q": 10, "num1": (2, 10), "num2": (2, 10)}
 
     def display(self):
-        print("\t\t\t M A T H S L A Y E R\n")
+        """Prints the main menu and waits for input."""
+        print(title_banner)
         print("[1] Play")
         print("[2] Help")
         print("[3] Options")
         print("[4] Exit")
 
-        return input_int()
+        return input_int(1, 4)
 
     def display_mode(self):
-        line()
+        """Prints the mode menu and waits for input."""
         print("Choose your game mode:")
         print("[1] Addition")
         print("[2] Subtraction")
         print("[3] Multiplication")
         print("[4] Division")
 
-        return input_int()
+        return input_int(1, 4)
 
-    def end_screen(self):
+    def display_end_screen(self):
+        """Prints the end screen after the game has ended."""
         line()
         print("Congratulations, you've finished the game!\n")
         print("Out of", Question.answered, "questions, ", end="")
         print("you have answered", Question.answered_correct, "correctly.")
 
     def display_help(self):
-        line()
-        print(
-            """
-        To get a high score, answer each question correctly!
-        You can pick between 4 modes, as well as adjust the number
-        of questions and difficulty in Options.
-        """
-        )
+        """Prints help."""
+        print(help)
 
     def display_options(self):
-        pass
+        """Prints the options and lets the user adjust game parameters."""
+        print("Options:\n")
+        print("[1] Number of Questions")
+        print("[2] Difficulty")
+
+        selection = input_int(1, 2)
+
+        if selection == 1:
+            print("How many questions do you want to answer?")
+            GameManager.parameters["num_q"] = input_int(1, 1000)
+
+        elif selection == 2:
+            # felt necessary to define ranges for both nums bc of certain use cases
+            print("Input the smallest number for the first number:")
+            small_num1 = input_int(1, 1000000)
+            print("Input the largest number for the first number:")
+            big_num1 = input_int(small_num1 + 1, 1000001)
+            print("Input the smallest number for the second number:")
+            small_num2 = input_int(1, 1000000)
+            print("Input the largest number for the second number:")
+            big_num2 = input_int(small_num1 + 1, 1000001)
+
+            GameManager.parameters["num1"] = (small_num1, big_num1)
+            GameManager.parameters["num2"] = (small_num2, big_num2)
 
     def display_exit(self):
+        """Prints the ending tagline."""
         print("Thank you for playing. See you next time!")
         line()
 
+    def reset_game(self):
+        """Clears the necessary vars after finishing a game."""
+        Question.answered = 0
+        Question.answered_correct = 0
+
 
 class GameLoop:
-    def __init__(self, q_num: int, curr_mode: str):
-        self.q_num = q_num
-        self.curr_mode = curr_mode
-        self.current_q = 0
+    """Class for handling the flow of the game, such as asking questions."""
 
-        num1 = range(1, 10)  # difficulty
-        num2 = range(1, 10)
-        op = mode[self.curr_mode]
-        q_range = range(self.q_num)
+    def __init__(self, curr_mode: str):
 
+        # using the current parameters, generates the qs and stores them
+        num1 = range(*GameManager.parameters["num1"])
+        num2 = range(*GameManager.parameters["num2"])
+        q_range = range(GameManager.parameters["num_q"])
+        op = mode[curr_mode]
+
+        # no instance vars besides self.q_list bc it seems unnecessary for now
         self.q_list = [Question(ch(num1), ch(num2), op) for q in q_range]
 
     def ask_q(self):
+        """Executes the general flow of the game."""
         current_q = self.q_list[Question.answered]
 
         line()
@@ -86,6 +134,7 @@ class GameLoop:
 
 
 class Question:
+    """Class for the questions used in the game."""
 
     answered: int = 0
     answered_correct: int = 0
@@ -95,6 +144,7 @@ class Question:
         self.num2 = num2
         self.operation = operation
 
+        # this part generates the questions, might be better to seperate this
         if operation == "+":
             self.correct_answer = num1 + num2
         elif operation == "-":
@@ -102,22 +152,28 @@ class Question:
         elif operation == "x":
             self.correct_answer = num1 * num2
         elif operation == "/":
+            # this one is different to make difficulty more interesting
             self.correct_answer = num1
             self.num1 = num1 * num2
         else:
+            # make sure to add here if you want more modes
             raise TypeError
 
         self.correct_answer = int(self.correct_answer)
         self.answered += 1
 
     def display(self):
+        """Displays the current question and score."""
         print("Question", Question.answered + 1, end="\t" * 5)
         print("Score: {}/{}".format(Question.answered_correct, Question.answered))
         print(end="\t\t\t   ")
+
+        # for different modes, you may want to create a different display
         print(self.num1, self.operation, self.num2, "= ?")
         return None
 
     def check(self, answer: int):
+        """Checks the given answer and adjusts game variables accordingly."""
         Question.answered += 1
         if answer != self.correct_answer:
             print("Wrong! The correct answer is", self.correct_answer)
@@ -127,30 +183,29 @@ class Question:
 
 
 menu = GameManager()
-line()
 
 while True:
 
-    location = menu.display()
+    line()
+    option = menu.display()
+    line()
 
-    if location == 1:
-        new_game = GameLoop(10, menu.display_mode())
+    if option == 1:
+        new_mode = menu.display_mode()
+        new_game = GameLoop(new_mode)
 
-        while new_game.q_num > Question.answered:
+        while Question.answered < GameManager.parameters["num_q"]:
             new_game.ask_q()
 
-        menu.end_screen()
+        menu.display_end_screen()
+        menu.reset_game()
 
-    elif location == 2:
+    elif option == 2:
         menu.display_help()
 
-    elif location == 3:
+    elif option == 3:
         menu.display_options()
 
-    elif location == 4:
+    elif option == 4:
         menu.display_exit()
         break
-
-    Question.answered = 0
-    Question.answered_correct = 0
-    line()
