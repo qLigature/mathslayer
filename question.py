@@ -1,5 +1,6 @@
 from random import choice as ch
 
+# block text is usually placed at the start i guess
 title_banner = """
 .   ,  ,.  ,---. .  .  ,-.  ,     ,.  .   , ,--. ,-.  
 |\ /| /  \   |   |  | (   ` |    /  \  \ /  |    |  ) 
@@ -22,7 +23,7 @@ def line():
     print("-" * 66)
 
 
-def input_int(min_num: int = -999999, max_num: int = 999999):
+def input_int(min_num: int = -9999999, max_num: int = 9999999):
     """Returns the first integer user input between min_num and max_num"""
     while True:
         try:
@@ -38,8 +39,8 @@ def input_int(min_num: int = -999999, max_num: int = 999999):
 class GameManager:
     """Class for handling menus and parameters of the GameLoop"""
 
-    # default parameters when the program starts
-    parameters = {"num_q": 10, "num1": (2, 10), "num2": (2, 10)}
+    # default params when program starts, 11 is used so 10 can be included in qs
+    parameters = {"num_q": 10, "num1": (2, 11), "num2": (2, 11)}
 
     def display(self):
         """Prints the main menu and waits for input."""
@@ -95,8 +96,9 @@ class GameManager:
             print("Input the largest number for the second number:")
             big_num2 = input_int(small_num1 + 1, 1000001)
 
-            GameManager.parameters["num1"] = (small_num1, big_num1)
-            GameManager.parameters["num2"] = (small_num2, big_num2)
+            # add 1 to big_num so big_num is included in the range of numbers for q
+            GameManager.parameters["num1"] = (small_num1, big_num1 + 1)
+            GameManager.parameters["num2"] = (small_num2, big_num2 + 1)
 
     def display_exit(self):
         """Prints the ending tagline."""
@@ -159,7 +161,8 @@ class Question:
             # make sure to add here if you want more modes
             raise TypeError
 
-        self.correct_answer = int(self.correct_answer)
+        # unnecessary (for now) bc all possible results are ints anyway
+        # self.correct_answer = int(self.correct_answer)
         self.answered += 1
 
     def display(self):
@@ -180,6 +183,8 @@ class Question:
         else:
             print("Correct!")
             Question.answered_correct += 1
+
+        return None
 
 
 menu = GameManager()
